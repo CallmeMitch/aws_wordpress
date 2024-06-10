@@ -6,7 +6,7 @@ resource "aws_subnet" "public_subnet" {
   count                   = 3
   vpc_id                  = var.vpc_id
   
-  cidr_block              = cidrsubnet(var.public_subnet_cidr.cidr_block, 8, count.index)
+  cidr_block              = cidrsubnet(var.aws_vpc_cidr, 8, count.index)
   
   availability_zone       = element(var.azs, count.index)
   
@@ -21,7 +21,7 @@ resource "aws_subnet" "public_subnet" {
 resource "aws_subnet" "private_subnet" {
   count                   = 3
   vpc_id                  = var.vpc_id
-  cidr_block              = cidrsubnet(var.private_subnet_cidr_wordpress.cidr_block, 8, count.index)
+  cidr_block              = cidrsubnet(var.aws_vpc_cidr, 8, count.index +10)
   availability_zone       = element(var.azs, count.index)
   depends_on              = [var.aws_vpc]
   tags = {
@@ -32,14 +32,15 @@ resource "aws_subnet" "private_subnet" {
 
 ## Create Network interface
 resource "aws_network_interface" "val-network-interface" {
-  subnet_id       = aws_subnet.public_subnet.id
-  private_ips     = ["10.0.0.50"]
-  security_groups = [aws_security_group.web.id]
+  count           = 3
+  subnet_id       = aws_subnet.public_subnet[count.index].id
+  private_ips     = [var.aws_vpc_cidr, 8, count.index + 20]
+  #security_groups = [aws_security_group.web.id]
 
-  attachment {
-    instance     = aws_instance.test.id
-    device_index = 1
-  }
+#  attachment {
+#    instance     = aws_instance.test.id
+#    device_index = 1
+#  }
 }
 
 ## Internet Gateway création 
@@ -47,12 +48,12 @@ resource "aws_internet_gateway" "val-gw-Internet" {
   vpc_id = var.vpc_id
 }
 
-## Déclaration d'une nat gateway
+## Déclaration des nat gateway
 resource "aws_nat_gateway" "val-nat-gw" {
-  count = 3
-  allocation_id = aws_eip.val-eip.id
-  subnet_id     = aws_subnet.public_subnet[count.index].id
-  depends_on = [aws_eip.val-eip, aws_subnet.public_subnets[count.index]]
+  count             = 3
+  allocation_id     = aws_eip.val-eip[count.index].id
+  subnet_id         = aws_subnet.public_subnet[count.index].id
+  depends_on        = [aws_eip.val-eip, aws_subnet.public_subnet[0], aws_subnet.public_subnet[1], aws_subnet.public_subnet[2]]
   connectivity_type = "public"
 
   tags = {
@@ -62,9 +63,9 @@ resource "aws_nat_gateway" "val-nat-gw" {
 
 ## Déclaration de l'EIP 
 resource "aws_eip" "val-eip" {
-#  count = 3
+  count = 3
   domain                    = "vpc"
-  network_interface         = aws_network_interface.val-network-interface.id
+  network_interface         = aws_network_interface.val-network-interface[count.index].id
 #  associate_with_private_ip = "10.0.0.10"
 
   tags = {
@@ -82,7 +83,7 @@ resource "aws_route_table" "route_table_public_subnet" {
   vpc_id     = var.vpc_id
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.val-gw-Internet[count.index].id
+    gateway_id = aws_internet_gateway.val-gw-Internet.id
   }
   tags = {
     Name = "Route table for public subnet"
@@ -93,7 +94,7 @@ resource "aws_route_table" "route_table_public_subnet" {
 
 resource "aws_route_table" "route_table_private_subnet" {
   count = 3
-  depends_on = [aws_nat_gateway.val-nat-gw[count.index]]
+  depends_on = [aws_nat_gateway.val-nat-gw[0], aws_nat_gateway.val-nat-gw[1], aws_nat_gateway.val-nat-gw[2]]
   vpc_id     = var.vpc_id
   
   route {
@@ -109,11 +110,14 @@ resource "aws_route_table" "route_table_private_subnet" {
 # Association pour le public subnets
 resource "aws_route_table_association" "public_subnet_association" {
   count          = 3
-  subnet_id      = element(aws_subnet.public_subnet[*].id, [count.index])
+  subnet_id      = aws_subnet.public_subnet[count.index].id
   route_table_id = aws_route_table.route_table_public_subnet.id
 }
 # Association pour le private subnet
 resource "aws_route_table_association" "rivate_subnet_association" {
-  subnet_id      = element(aws_subnet.private_subnet[*].id, [count.index])
-  route_table_id = aws_route_table.route_table_private_subnet.id
+  count = 3
+  subnet_id      = aws_subnet.private_subnet[count.index].id
+  route_table_id = aws_route_table.route_table_private_subnet[count.index].id
 }
+
+## subnet_id      = element(aws_subnet.private_subnet[*].id, [count.index])
