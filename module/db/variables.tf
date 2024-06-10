@@ -1,5 +1,5 @@
 variable "database_sg_id" {
 }
 
-variable "private_subnet" {
+variable "valentin_db_subnet" {
 }

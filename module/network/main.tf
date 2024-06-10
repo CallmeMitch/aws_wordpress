@@ -30,18 +30,28 @@ resource "aws_subnet" "private_subnet" {
 }
 
 
+# Private Data Subnets for RDS
+resource "aws_subnet" "private_subnet_db" {
+  count             = 3
+  depends_on        = [var.aws_vpc]
+  vpc_id            = var.vpc_id
+  cidr_block        = cidrsubnet(var.aws_vpc_cidr, 8, count.index +20)
+  availability_zone = element(var.azs, count.index)
+}
+
+resource "aws_db_subnet_group" "valentin_db_subnet" {
+  name       = "valentin_db_subnet"
+  subnet_ids = aws_subnet.private_subnet_db.*.id
+}
+
 ## Create Network interface
 resource "aws_network_interface" "val-network-interface" {
   count           = 3
   subnet_id       = aws_subnet.public_subnet[count.index].id
-  private_ips     = [var.aws_vpc_cidr, 8, count.index + 20]
-  #security_groups = [aws_security_group.web.id]
-
-#  attachment {
-#    instance     = aws_instance.test.id
-#    device_index = 1
-#  }
+  private_ips     = [var.aws_vpc_cidr, 8, count.index +40]
 }
+
+
 
 ## Internet Gateway création 
 resource "aws_internet_gateway" "val-gw-Internet" {
@@ -114,7 +124,7 @@ resource "aws_route_table_association" "public_subnet_association" {
   route_table_id = aws_route_table.route_table_public_subnet.id
 }
 # Association pour le private subnet
-resource "aws_route_table_association" "rivate_subnet_association" {
+resource "aws_route_table_association" "private_subnet_association" {
   count = 3
   subnet_id      = aws_subnet.private_subnet[count.index].id
   route_table_id = aws_route_table.route_table_private_subnet[count.index].id

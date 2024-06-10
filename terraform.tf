@@ -11,9 +11,9 @@ module "network" {
 }
 
 module "db" {
-    source          = "./module/db"
-    private_subnet  = module.network.private_subnet
-    database_sg_id  = module.secure_mod.database_sg_id
+    source            = "./module/db"
+    database_sg_id    = module.secure_mod.database_sg_id
+    valentin_db_subnet = module.network.valentin_db_subnet
 }
 
 module "secure_mod" {
@@ -27,4 +27,11 @@ module "lb" {
   public_subnet = module.network.public_subnet
   private_subnet = module.network.private_subnet
   vpc_id = aws_vpc.val_vpc.id
+  autoscaling_group_name = module.wordpress.autoscaling_group_name
+}
+
+module "wordpress" {
+  source = "./module/wordpress"
+  aws_db_instance = module.db.aws_db_instance
+  private_subnet = module.network.private_subnet
 }

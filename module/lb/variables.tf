@@ -9,3 +9,6 @@ variable "private_subnet" {
 
 variable "vpc_id" {
 }
+
+variable "autoscaling_group_name" {
+}
