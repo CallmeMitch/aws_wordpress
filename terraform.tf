@@ -4,6 +4,8 @@ resource "aws_vpc" "val_vpc" {
 }
 
 module "network" {
-    source = "./modules/network"
+    source = "./module/network"
     vpc_id = aws_vpc.val_vpc.id
+    aws_vpc_cidr = aws_vpc.val_vpc.cidr_block
+    aws_vpc = aws_vpc.val_vpc
 }
