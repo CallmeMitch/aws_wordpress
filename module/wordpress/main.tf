@@ -1,8 +1,8 @@
 resource "aws_launch_template" "valentin_launch_template" {
-  name                  = "admin"
-  user_data             = filebase64("./module/wordpress/cloud-init/wordpress.sh")
+  name                  = "valentinbrisonadministator"
+  user_data             = filebase64("/home/jonas801/Bureau/TECHNIQUE/aws_wordpress/module/wordpress/cloud-init/wordpress.sh")
   instance_type         = "t2.micro"
-#  iam_instance_profile  = "${aws_iam_instance_profile.valentin_profile.name}"
+  image_id              = "ami-0c68b55d1c875067e"
   depends_on            = [ var.aws_db_instance ]
 }
 
@@ -15,7 +15,7 @@ resource "aws_autoscaling_group" "autoscaling_wordpress" {
   desired_capacity     = 2
   
   vpc_zone_identifier  = var.private_subnet
-  name                 = "WP_AutoScalingGroup"
+  name                 = "WP_AutoScalingGroup${count.index}"
 
   launch_template {
     id      = aws_launch_template.valentin_launch_template.id
@@ -44,7 +44,7 @@ EOF
 }
 
 resource "aws_iam_instance_profile" "valentin_profile" {
-  name = "valentin_profile"
+  name = "valentin_brison_profile"
   role = "${aws_iam_role.valentin_role_instance.name}"
 }
 

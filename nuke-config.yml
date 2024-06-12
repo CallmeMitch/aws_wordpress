@@ -1,0 +1,5 @@
+regions:
+- eu-west-1
+
+accounts:
+  "<ACCOUNT_ID>": {891377255640} # aws-nuke-example

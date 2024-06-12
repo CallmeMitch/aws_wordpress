@@ -12,6 +12,8 @@ resource "aws_db_instance" "db_instance_4_wordpress" {
   parameter_group_name   = "default.mysql8.0"
   skip_final_snapshot    = true
   identifier             = "wordpress-db-vbrison-${count.index}"
-  db_subnet_group_name   = var.valentin_db_subnet
+  db_subnet_group_name   = element(var.valentin_db_subnet, count.index)
   vpc_security_group_ids = [var.database_sg_id]
 }
+
+

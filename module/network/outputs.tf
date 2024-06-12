@@ -7,5 +7,5 @@ output "private_subnet" {
 }
 
 output "valentin_db_subnet" {
-  value = aws_db_subnet_group.valentin_db_subnet.name
+  value = aws_db_subnet_group.valentin_db_subnet.*.name
 }

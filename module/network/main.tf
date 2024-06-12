@@ -40,16 +40,17 @@ resource "aws_subnet" "private_subnet_db" {
 }
 
 resource "aws_db_subnet_group" "valentin_db_subnet" {
-  name       = "valentin_db_subnet"
+  count      = 3
+  name       = "valentin_db_subnet${count.index}"
   subnet_ids = aws_subnet.private_subnet_db.*.id
 }
 
 ## Create Network interface
-resource "aws_network_interface" "val-network-interface" {
-  count           = 3
-  subnet_id       = aws_subnet.public_subnet[count.index].id
-  private_ips     = [var.aws_vpc_cidr, 8, count.index +40]
-}
+#resource "aws_network_interface" "val-network-interface" {
+#  count           = 3
+#  subnet_id       = aws_subnet.public_subnet[count.index].id
+#  private_ips     = [cidrhost(cidrsubnet(var.aws_vpc_cidr, 8, count.index +60), count.index +100)]
+#}
 
 
 
@@ -75,8 +76,7 @@ resource "aws_nat_gateway" "val-nat-gw" {
 resource "aws_eip" "val-eip" {
   count = 3
   domain                    = "vpc"
-  network_interface         = aws_network_interface.val-network-interface[count.index].id
-#  associate_with_private_ip = "10.0.0.10"
+  depends_on                = [aws_internet_gateway.val-gw-Internet]
 
   tags = {
     Name = "WordPress - Nat_GateWay_EIP"
